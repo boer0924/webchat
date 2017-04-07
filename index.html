@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta property="wb:webmaster" content="52bcd0c403a12c99" />
+    <title>WebChat</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+        }
+        input {
+            border: 0;
+            border-radius: 5px;
+        }
+        .auth {
+            position: absolute;
+            width: 600px;
+            height: 300px;
+            margin: auto;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-color: #99FFCC;
+            border-radius: 10px;
+            opacity: 0.8;
+            box-shadow: 5px 5px 5px 5px #000;
+        }
+        .auth div {
+            position: relative;
+            width: 60%;
+            height: 60%;
+            margin: auto;
+            top: 100px;
+        }
+        .auth div input {
+            position: relative;
+            width: 200px;
+            height: 40px;
+            font-size: 30px;
+            margin: auto;
+        }
+        #ctn {
+            margin: 20px;
+        }
+        .add-color {
+            display: inline-block;
+            background-color: #99DD55;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px;
+        }
+        .add-avatar {
+            /*display: inline-block;*/
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            padding: 10px;
+            font-size: 20px;
+            line-height: 40px;
+            background-color: #998877;
+            overflow: hidden;
+        }
+        footer {
+            position: fixed;
+            width: 100%;
+            bottom: 30px;
+            padding: 0;
+        }
+        .container {
+            background-color: #56728e;
+            width: 600px;
+            height: 60px;
+            margin: 0 auto;
+            padding: 5px 20px;
+            opacity: 0.8;
+            border-radius: 2px;
+            box-shadow: 3px 3px 3px 3px #000;            
+        }
+        #msg {
+            float: left;
+            width: 80%;
+            height: 100%;
+            border: 0;
+            border-radius: 5px;
+            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+            font-size: 24px;
+        }
+        #send {
+            float: left;
+            width: 20%;
+            height: 100%;
+            background-color: #CC0033;
+            border: 0;
+            border-radius: 10px;
+            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth">
+        <div>
+            请输入用户名：
+            <input type="text" id="name">
+        </div>
+    </div>
+    <div class="main">
+        <div id="ctn"></div>
+        <footer>
+            <div class="container">
+                <input type="text" id="msg" placeholder="请输入内容......">
+                <button id="send">发送</button>
+            </div>
+        </footer>
+    </div>
+    <script src="http://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <script src="./cookies.js"></script>
+    <script>
+        let getRandomColor = function () {
+            return '#' + (function (color) {
+                return (color += '0123456789abcdef'[Math.floor(Math.random()*16)])
+                    && (color.length == 6) ? color : arguments.callee(color);
+            })('');
+        };
+
+        $(function () {
+            if (docCookies.getItem('name')) {
+                var webSocket = new WebSocket('ws://mail.heclouds.com:54812');
+                // $('.main').show();
+                $('.auth').hide();
+                webSocket.onopen = function (e) {
+                    let data = {
+                        msg: 'Hi, 大家好！',
+                        nickname: docCookies.getItem('name')
+                    }
+                    webSocket.send(JSON.stringify(data));
+                };
+
+                webSocket.onmessage = function (e) {
+                    let res = JSON.parse(e.data);
+                    // console.log(res.color);
+                    $('#ctn').append('<span class="add-avatar">' + res.nickname + '</span><p class="add-color" style="background-color:' + res.color + '">' + res.msg + '</p><br>');
+                    // console.log($('#ctn').height(), $(window).height());
+                    if ($('#ctn').height() > $(window).height()) {
+                        $(window).scrollTop($('#ctn').height() - $(window).height() + 240);
+                    }
+                };
+
+                webSocket.onclose = function (e) {
+                    docCookies.removeItem('name');
+                };
+            } else {
+                $('.main').hide();
+                // $('.auth').show();
+            }
+            
+            $('#name').bind('keydown', function (e) {
+                if (e.keyCode == 13) {
+                    docCookies.setItem('name', $('#name').val());
+                    location.reload();
+                }
+            });
+
+            $('#send').bind('click', function () {
+                let data = {
+                    msg: $('#msg').val(),
+                    nickname: docCookies.getItem('name')
+                }
+                webSocket.send(JSON.stringify(data));
+                $('#msg').val('');
+            });
+
+            $('#msg').bind('keydown', function (e) {
+                if (e.keyCode == 13) {
+                    $('#send').click();
+                }
+            }); 
+        })
+    </script>
+</body>
+</html>
